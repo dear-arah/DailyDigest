@@ -52,7 +52,7 @@ def test_load_channel_reads_providers_in_order(tmp_path):
         "news.yaml",
         """
 name: news
-webhook_env: DISCORD_WEBHOOK_NEWS
+webhook_env: DISCORD_WEBHOOK_URL
 sources_file: config/sources.yaml
 context_file: config/agora-context.md
 keywords: [voice ai, agents]

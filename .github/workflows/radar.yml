@@ -37,7 +37,7 @@ jobs:
 
       - name: Collect, analyze and post
         env:
-          DISCORD_WEBHOOK_NEWS: ${{ secrets.DISCORD_WEBHOOK_NEWS }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GITHUB_TOKEN: ${{ github.token }}

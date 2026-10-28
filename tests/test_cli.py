@@ -34,6 +34,37 @@ def test_run_requires_webhook_unless_dry_run(tmp_path, monkeypatch):
     assert code == 2
 
 
+def test_webhook_is_read_from_env_file(tmp_path, monkeypatch):
+    monkeypatch.setenv("DIGEST_TEST_HOOK", "placeholder")
+    monkeypatch.delenv("DIGEST_TEST_HOOK")
+    seen = {}
+
+    def fake_run(*args, **kwargs):
+        seen["webhook_url"] = kwargs["webhook_url"]
+        return RunReport()
+
+    monkeypatch.setattr("radar.__main__.run_channel", fake_run)
+    env_file = tmp_path / "custom.env"
+    env_file.write_text("DIGEST_TEST_HOOK=https://hook.example/from-file\n")
+    channel = write_config(tmp_path)
+
+    code = main(
+        ["run", "--channel", str(channel), "--state", str(tmp_path / "s.json"), "--env-file", str(env_file)]
+    )
+
+    assert code == 0
+    assert seen["webhook_url"] == "https://hook.example/from-file"
+
+
+def test_missing_webhook_message_names_the_variable(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("DIGEST_TEST_HOOK", raising=False)
+    channel = write_config(tmp_path)
+
+    main(["run", "--channel", str(channel), "--state", str(tmp_path / "s.json")])
+
+    assert "DIGEST_TEST_HOOK" in capsys.readouterr().err
+
+
 def test_run_exits_nonzero_when_posts_failed(tmp_path, monkeypatch):
     monkeypatch.setenv("DIGEST_TEST_HOOK", "https://hook.example/w")
     monkeypatch.setattr("radar.__main__.run_channel", lambda *a, **k: RunReport(failed=2))

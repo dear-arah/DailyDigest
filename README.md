@@ -18,9 +18,11 @@ If no model is reachable, up to two official items per run are posted marked "An
 
 1. In your Discord server, open the channel settings, then Integrations, then Webhooks, and create a webhook. Copy its URL.
 2. In this repository, open Settings, then Secrets and variables, then Actions, and add:
-   - `DISCORD_WEBHOOK_NEWS`: the webhook URL.
+   - `DISCORD_WEBHOOK_URL`: the webhook URL.
    - `GEMINI_API_KEY`: a free key from Google AI Studio (optional but recommended).
    - `GROQ_API_KEY`: a free key from the Groq console (optional, used as a fallback).
+
+   These are the same names as in `.env.example`, so a local `.env` and the repository secrets stay in step.
 3. Open the Actions tab, choose `radar`, and run it once with "Run workflow". The first run only records what already exists, so it posts nothing. Later runs post new items.
 4. Choose `digest` and run it once to check the daily digest.
 
@@ -39,11 +41,14 @@ Providers are tried in the order listed in `config/channels/news.yaml`. A provid
 ```bash
 python -m venv .venv
 .venv/bin/pip install -e '.[dev]'
+cp .env.example .env   # then fill in your keys
 .venv/bin/pytest
 .venv/bin/python -m radar run --channel config/channels/news.yaml --dry-run
 ```
 
-`--dry-run` prints the posts instead of sending them and saves nothing.
+The program reads `.env` from the current directory (use `--env-file` for another path). Variables already set in the shell win over the file, and empty values are ignored. `.env` is listed in `.gitignore`; never commit it.
+
+`--dry-run` prints the posts instead of sending them and saves nothing. It still calls the language model, so it needs a Gemini or Groq key, but it does not need the webhook.
 
 ## Notes
 

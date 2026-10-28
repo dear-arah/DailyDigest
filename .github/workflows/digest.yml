@@ -31,5 +31,5 @@ jobs:
 
       - name: Post digest
         env:
-          DISCORD_WEBHOOK_NEWS: ${{ secrets.DISCORD_WEBHOOK_NEWS }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m radar digest --channel config/channels/news.yaml --state state-repo/news.json

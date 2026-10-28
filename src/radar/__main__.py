@@ -9,6 +9,7 @@ from pathlib import Path
 
 from radar.config import load_channel, load_sources
 from radar.dedupe import SeenStore
+from radar.env import load_dotenv
 from radar.llm.chain import build_chain
 from radar.run import run_channel, run_digest
 
@@ -21,12 +22,14 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument("--channel", type=Path, required=True, help="path to a channel yaml file")
         command.add_argument("--state", type=Path, help="path to the state json file")
         command.add_argument("--dry-run", action="store_true", help="print embeds instead of posting")
+        command.add_argument("--env-file", type=Path, default=Path(".env"), help="file with local secrets (default: .env)")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    load_dotenv(args.env_file)
 
     channel = load_channel(args.channel)
     state = args.state or Path("state") / f"{channel.name}.json"
@@ -35,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     now = datetime.now(timezone.utc)
 
     if not args.dry_run and not webhook_url:
-        print(f"error: {channel.webhook_env} is not set", file=sys.stderr)
+        print(f"error: {channel.webhook_env} is not set (add it to {args.env_file} or the environment)", file=sys.stderr)
         return 2
 
     if args.command == "digest":
