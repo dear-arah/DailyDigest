@@ -1,0 +1,122 @@
+# Tier 1 = official (company blogs, release feeds). Tier 2 = known people. Tier 3 = press.
+# discovery: true means the item is only posted if its publisher domain is listed under trusted_domains.
+#
+# To follow a person, add their feed as a tier 2 source, for example:
+#   - {name: "Jane Doe (Bluesky)", url: "https://bsky.app/profile/<handle>/rss", tier: 2}
+#   - {name: "Jane Doe (Medium)",  url: "https://medium.com/feed/@<handle>", tier: 2}
+#   - {name: "Jane Doe (Mastodon)", url: "https://<instance>/@<handle>.rss", tier: 2}
+
+sources:
+  # --- Tier 1: official blogs ---
+  - {name: "OpenAI News", url: "https://openai.com/news/rss.xml", tier: 1}
+  - {name: "Google DeepMind", url: "https://deepmind.google/blog/rss.xml", tier: 1}
+  - {name: "Google AI Blog", url: "https://blog.google/technology/ai/rss/", tier: 1}
+  - {name: "Microsoft AI News", url: "https://news.microsoft.com/source/topics/ai/feed", tier: 1}
+  - {name: "NVIDIA Developer Blog", url: "https://developer.nvidia.com/blog/feed", tier: 1}
+  - {name: "Hugging Face Blog", url: "https://huggingface.co/blog/feed.xml", tier: 1}
+  - {name: "GitHub Blog", url: "https://github.blog/feed/", tier: 1}
+  - {name: "ElevenLabs Blog", url: "https://elevenlabs.io/blog/rss.xml", tier: 1}
+  - {name: "Daily Blog", url: "https://www.daily.co/blog/rss/", tier: 1}
+  - {name: "Twilio Blog", url: "https://www.twilio.com/en-us/blog/feed", tier: 1}
+  - {name: "Vonage Developer", url: "https://developer.vonage.com/rss.xml", tier: 1}
+
+  # --- Tier 1: official release feeds ---
+  - {name: "LiveKit Agents", url: "https://github.com/livekit/agents/releases.atom", tier: 1}
+  - {name: "LiveKit Server", url: "https://github.com/livekit/livekit/releases.atom", tier: 1}
+  - {name: "Pipecat", url: "https://github.com/pipecat-ai/pipecat/releases.atom", tier: 1}
+  - {name: "Deepgram Python SDK", url: "https://github.com/deepgram/deepgram-python-sdk/releases.atom", tier: 1}
+  - {name: "Cartesia Python SDK", url: "https://github.com/cartesia-ai/cartesia-python/releases.atom", tier: 1}
+  - {name: "AssemblyAI Python SDK", url: "https://github.com/AssemblyAI/assemblyai-python-sdk/releases.atom", tier: 1}
+  - {name: "Vapi Server SDK", url: "https://github.com/VapiAI/server-sdk-python/releases.atom", tier: 1}
+  - {name: "Retell Python SDK", url: "https://github.com/RetellAI/retell-python-sdk/releases.atom", tier: 1}
+  - {name: "OpenAI Python SDK", url: "https://github.com/openai/openai-python/releases.atom", tier: 1}
+  - {name: "Anthropic Python SDK", url: "https://github.com/anthropics/anthropic-sdk-python/releases.atom", tier: 1}
+  - {name: "Agora Python Server SDK", url: "https://github.com/AgoraIO-Extensions/Agora-Python-Server-SDK/releases.atom", tier: 1}
+  - {name: "Agora Skills", url: "https://github.com/AgoraIO/skills/releases.atom", tier: 1}
+
+  # --- Tier 2: known people ---
+  - {name: "Simon Willison", url: "https://simonwillison.net/atom/everything/", tier: 2}
+  - {name: "Latent Space", url: "https://www.latent.space/feed", tier: 2}
+
+  # --- Tier 3: press ---
+  - {name: "TechCrunch AI", url: "https://techcrunch.com/category/artificial-intelligence/feed/", tier: 3}
+  - {name: "The Verge AI", url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", tier: 3}
+  - {name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index", tier: 3}
+  - {name: "MIT Technology Review AI", url: "https://www.technologyreview.com/topic/artificial-intelligence/feed", tier: 3}
+
+  # --- Discovery: news search (publisher domain decides the tier) ---
+  - {name: "News: voice AI", url: "https://news.google.com/rss/search?q=%22voice+ai%22+OR+%22voice+agent%22+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 3, discovery: true}
+  - {name: "News: voice platforms", url: "https://news.google.com/rss/search?q=LiveKit+OR+Vapi+OR+Retell+OR+Pipecat+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 3, discovery: true}
+  - {name: "News: voice models", url: "https://news.google.com/rss/search?q=ElevenLabs+OR+Deepgram+OR+Cartesia+OR+AssemblyAI+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 3, discovery: true}
+  - {name: "News: Agora", url: "https://news.google.com/rss/search?q=Agora+%22conversational+AI%22+when:7d&hl=en-US&gl=US&ceid=US:en", tier: 3, discovery: true}
+  - {name: "News: Anthropic", url: "https://news.google.com/rss/search?q=Anthropic+when:1d&hl=en-US&gl=US&ceid=US:en", tier: 3, discovery: true}
+  - {name: "Site: agora.io", url: "https://news.google.com/rss/search?q=site:agora.io+when:7d&hl=en-US&gl=US&ceid=US:en", tier: 1, discovery: true}
+  - {name: "Site: deepgram.com", url: "https://news.google.com/rss/search?q=site:deepgram.com+when:7d&hl=en-US&gl=US&ceid=US:en", tier: 1, discovery: true}
+  - {name: "Site: cartesia.ai", url: "https://news.google.com/rss/search?q=site:cartesia.ai+when:7d&hl=en-US&gl=US&ceid=US:en", tier: 1, discovery: true}
+  - {name: "Site: assemblyai.com", url: "https://news.google.com/rss/search?q=site:assemblyai.com+when:7d&hl=en-US&gl=US&ceid=US:en", tier: 1, discovery: true}
+  - {name: "Site: vapi.ai", url: "https://news.google.com/rss/search?q=site:vapi.ai+when:7d&hl=en-US&gl=US&ceid=US:en", tier: 1, discovery: true}
+  - {name: "Site: livekit.io", url: "https://news.google.com/rss/search?q=site:livekit.io+when:7d&hl=en-US&gl=US&ceid=US:en", tier: 1, discovery: true}
+  - {name: "Site: venturebeat.com", url: "https://news.google.com/rss/search?q=site:venturebeat.com+AI+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 3, discovery: true}
+
+  # --- Discovery: community ---
+  - {name: "Hacker News front page", url: "https://hnrss.org/frontpage", tier: 3, discovery: true}
+  - {name: "Hacker News: voice agents", url: "https://hnrss.org/newest?q=voice+agent&points=30", tier: 3, discovery: true}
+  - {name: "Hacker News: AI agents", url: "https://hnrss.org/newest?q=ai+agents&points=100", tier: 3, discovery: true}
+
+# Domains whose publications can be trusted when an item is found through a discovery feed.
+# The most specific matching domain wins, so a forum subdomain can be given a different tier.
+trusted_domains:
+  # official
+  openai.com: 1
+  anthropic.com: 1
+  deepmind.google: 1
+  blog.google: 1
+  ai.google.dev: 1
+  news.microsoft.com: 1
+  blogs.microsoft.com: 1
+  nvidia.com: 1
+  huggingface.co: 1
+  github.blog: 1
+  mistral.ai: 1
+  ai.meta.com: 1
+  cohere.com: 1
+  x.ai: 1
+  elevenlabs.io: 1
+  deepgram.com: 1
+  cartesia.ai: 1
+  assemblyai.com: 1
+  livekit.io: 1
+  daily.co: 1
+  pipecat.ai: 1
+  vapi.ai: 1
+  retellai.com: 1
+  twilio.com: 1
+  vonage.com: 1
+  agora.io: 1
+  # known people
+  simonwillison.net: 2
+  latent.space: 2
+  # press
+  techcrunch.com: 3
+  theverge.com: 3
+  venturebeat.com: 3
+  arstechnica.com: 3
+  technologyreview.com: 3
+  wired.com: 3
+  reuters.com: 3
+  bloomberg.com: 3
+  wsj.com: 3
+  cnbc.com: 3
+  ft.com: 3
+  nytimes.com: 3
+  zdnet.com: 3
+  infoq.com: 3
+  theinformation.com: 3
+  axios.com: 3
+  fastcompany.com: 3
+  theregister.com: 3
+  siliconangle.com: 3
+  # community and support sites are user-written, so they are not official
+  community.retellai.com: 3
+  community.vapi.ai: 3
+  discuss.livekit.io: 3

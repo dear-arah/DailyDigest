@@ -1,0 +1,53 @@
+name: news
+webhook_env: DISCORD_WEBHOOK_NEWS
+sources_file: config/sources.yaml
+context_file: config/agora-context.md
+
+# An item is analyzed only if its title or text contains one of these words (plural forms match too).
+keywords:
+  - voice ai
+  - voice agent
+  - conversational ai
+  - ai agent
+  - agentic
+  - realtime
+  - real-time
+  - speech
+  - text-to-speech
+  - tts
+  - asr
+  - transcription
+  - webrtc
+  - rtc
+  - telephony
+  - sip
+  - avatar
+  - multimodal
+  - mcp
+  - llm
+  - livekit
+  - pipecat
+  - vapi
+  - retell
+  - deepgram
+  - elevenlabs
+  - cartesia
+  - assemblyai
+  - twilio
+  - vonage
+  - agora
+  - openai
+  - anthropic
+  - gemini
+  - hackathon
+  - devrel
+
+threshold: 6
+max_posts_per_run: 8
+max_age_hours: 48
+
+# Tried in this order. A provider without its key in the environment is skipped.
+providers:
+  - {name: gemini, model: gemini-2.5-flash}
+  - {name: groq, model: llama-3.3-70b-versatile}
+  - {name: github, model: openai/gpt-4.1-mini}

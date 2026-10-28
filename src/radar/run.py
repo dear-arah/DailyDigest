@@ -19,6 +19,7 @@ from radar.post import build_embed, post_embed
 log = logging.getLogger(__name__)
 
 ANALYSIS_FACTOR = 3
+MAX_UNANALYZED_PER_RUN = 2
 
 
 @dataclass
@@ -93,7 +94,18 @@ def run_channel(
             to_post.append((item, analysis, tier))
 
         to_post.sort(key=lambda entry: -(entry[1].score if entry[1] else channel.threshold))
-        for item, analysis, tier in to_post[: channel.max_posts_per_run]:
+        selected = []
+        unanalyzed = 0
+        for entry in to_post:
+            if len(selected) == channel.max_posts_per_run:
+                break
+            if entry[1] is None:
+                if entry[2] != 1 or unanalyzed >= MAX_UNANALYZED_PER_RUN:
+                    continue
+                unanalyzed += 1
+            selected.append(entry)
+
+        for item, analysis, tier in selected:
             embed = build_embed(item, analysis, tier)
             if dry_run:
                 print(json.dumps(embed, indent=2))

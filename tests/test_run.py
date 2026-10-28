@@ -33,14 +33,14 @@ def make_channel(**overrides):
     return Channel(**fields)
 
 
-def make_item(title, published=NOW - timedelta(hours=1), discovery=False, url=None, text="voice ai news"):
+def make_item(title, published=NOW - timedelta(hours=1), discovery=False, url=None, text="voice ai news", tier=1):
     return Item(
         title=title,
         url=url or f"https://example.com/{title.replace(' ', '-')}",
         text=text,
         published=published,
         source="S",
-        tier=1,
+        tier=tier,
         discovery=discovery,
     )
 
@@ -241,6 +241,25 @@ def test_analysis_failure_posts_pending(tmp_path):
 
     assert "Analysis pending" in post.embeds[0]["description"]
     assert report.pending == 1
+
+
+def test_pending_posts_limited_to_two_official_items(tmp_path):
+    items = [make_item(f"Story {n}") for n in range(4)]
+
+    report, store, _, post = run(tmp_path, items, provider=ScoreProvider(error=ProviderError("down")))
+
+    assert len(post.embeds) == 2
+    assert report.pending == 2
+    assert sum(store.seen(i) for i in items) == 2
+
+
+def test_pending_not_posted_for_non_official_items_and_retried_later(tmp_path):
+    items = [make_item("Press story", tier=3)]
+
+    _, store, _, post = run(tmp_path, items, provider=ScoreProvider(error=ProviderError("down")))
+
+    assert post.embeds == []
+    assert not store.seen(items[0])
 
 
 def test_one_broken_item_does_not_stop_the_run(tmp_path):

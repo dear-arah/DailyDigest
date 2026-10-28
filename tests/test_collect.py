@@ -74,8 +74,15 @@ def test_fetch_feed_skips_entries_without_link():
 def test_fetch_feed_reads_publisher_url_from_source_tag():
     items = fetch_feed(RSS, get=fake_get({RSS.url: rss_response()}))
 
-    press = next(i for i in items if i.title == "Press story")
+    press = next(i for i in items if i.url.endswith("/abc"))
     assert press.publisher_url == "https://techcrunch.com"
+
+
+def test_fetch_feed_strips_publisher_suffix_from_title():
+    items = fetch_feed(RSS, get=fake_get({RSS.url: rss_response()}))
+
+    press = next(i for i in items if i.url.endswith("/abc"))
+    assert press.title == "Press story"
 
 
 def test_fetch_feed_strips_html_and_truncates():

@@ -58,6 +58,9 @@ def fetch_feed(source: Source, get: Callable = requests.get, timeout: float = 15
         if not link:
             continue
         title = _clean(entry.get("title", ""))
+        publisher = (entry.get("source") or {}).get("title", "")
+        if publisher and title.endswith(f" - {publisher}"):
+            title = title[: -len(f" - {publisher}")]
         if _BARE_VERSION.match(title):
             title = f"{source.name} {title}"
         items.append(
