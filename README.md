@@ -47,6 +47,9 @@ python -m venv .venv
 
 ## Notes
 
+- Keep the repository public. Actions minutes are unlimited for public repositories. A private repository gets 2,000 free minutes a month, and a run every 30 minutes can use more than that.
+- Create the Gemini key in Google AI Studio under a project that has no billing account attached, so it can only use the free tier.
+- A run fails (and GitHub emails you) when Discord rejects posts, for example after the webhook was deleted.
 - Processed items are kept in a `state` branch that the workflow maintains. Do not edit it by hand.
 - GitHub pauses scheduled workflows in repositories with no activity for 60 days. The `keepalive` workflow re-enables the schedule weekly. If posts stop, open the Actions tab and re-enable the workflows.
 - Free-tier limits of the model providers change. If a provider starts failing, the next one in the list is used.

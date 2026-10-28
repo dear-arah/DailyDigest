@@ -39,9 +39,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.command == "digest":
-        posted = run_digest(store, webhook_url, now, dry_run=args.dry_run)
-        print("digest posted" if posted else "nothing to post")
-        return 0
+        result = run_digest(store, webhook_url, now, dry_run=args.dry_run)
+        print({"posted": "digest posted", "empty": "nothing to post", "failed": "digest failed"}[result])
+        return 1 if result == "failed" else 0
 
     cfg = load_sources(Path(channel.sources_file))
     context = Path(channel.context_file).read_text()
@@ -59,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
         dry_run=args.dry_run,
     )
     print(report)
-    return 0
+    return 1 if report.failed else 0
 
 
 if __name__ == "__main__":

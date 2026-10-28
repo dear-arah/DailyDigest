@@ -195,6 +195,15 @@ def test_post_failure_leaves_item_retryable(tmp_path):
     assert [e["title"] for e in post.embeds] == ["Fresh news"]
 
 
+def test_failed_posts_are_counted_in_the_report(tmp_path):
+    items = [make_item("One"), make_item("Two")]
+
+    report, _, _, _ = run(tmp_path, items, post=PostRecorder([False, True]))
+
+    assert report.failed == 1
+    assert report.posted == 1
+
+
 def test_posts_capped_and_highest_score_first(tmp_path):
     items = [make_item("Low"), make_item("Top"), make_item("Mid")]
     provider = ScoreProvider(scores={"Low": 7, "Top": 9, "Mid": 8})
@@ -285,14 +294,24 @@ def test_run_digest_posts_recent_records(tmp_path):
     store.record(make_item("Fresh news"), analysis, posted=True, now=NOW - timedelta(hours=2))
     post = PostRecorder()
 
-    assert run_digest(store, HOOK, NOW, post=post) is True
+    assert run_digest(store, HOOK, NOW, post=post) == "posted"
 
     assert "fields" in post.embeds[0]
+
+
+def test_run_digest_reports_failure_when_discord_rejects_it(tmp_path):
+    store = seeded_store(tmp_path)
+    analysis = parse_analysis(
+        json.dumps({"summary": "S.", "score": 9, "tag": "fyi", "product": "General", "angle": "A."})
+    )
+    store.record(make_item("Fresh news"), analysis, posted=True, now=NOW - timedelta(hours=2))
+
+    assert run_digest(store, HOOK, NOW, post=PostRecorder([False])) == "failed"
 
 
 def test_run_digest_returns_false_when_nothing_to_post(tmp_path):
     store = SeenStore(tmp_path / "state.json")
     post = PostRecorder()
 
-    assert run_digest(store, HOOK, NOW, post=post) is False
+    assert run_digest(store, HOOK, NOW, post=post) == "empty"
     assert post.embeds == []

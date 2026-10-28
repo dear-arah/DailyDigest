@@ -13,9 +13,6 @@ permissions:
   contents: write
   models: read
 
-env:
-  STATE_REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
-
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -33,12 +30,10 @@ jobs:
         run: pip install .
 
       - name: Load state
-        run: |
-          if git ls-remote --exit-code --heads "$STATE_REMOTE" state >/dev/null 2>&1; then
-            git clone --quiet --depth 1 --branch state "$STATE_REMOTE" state-repo
-          else
-            git init --quiet -b state state-repo
-          fi
+        id: load
+        env:
+          STATE_REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: sh scripts/load-state.sh "$STATE_REMOTE" state-repo
 
       - name: Collect, analyze and post
         env:
@@ -49,16 +44,7 @@ jobs:
         run: python -m radar run --channel config/channels/news.yaml --state state-repo/news.json
 
       - name: Save state
-        if: always()
-        run: |
-          cd state-repo
-          git add -A
-          if git diff --cached --quiet && git rev-parse --verify --quiet HEAD >/dev/null; then
-            exit 0
-          fi
-          git checkout --quiet --orphan snapshot
-          git add -A
-          git -c user.name="github-actions[bot]" \
-              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit --quiet -m "chore: update state"
-          git push --quiet --force "$STATE_REMOTE" snapshot:state
+        if: ${{ !cancelled() && steps.load.outcome == 'success' }}
+        env:
+          STATE_REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: sh scripts/save-state.sh "$STATE_REMOTE" state-repo

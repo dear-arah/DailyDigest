@@ -29,6 +29,7 @@ class RunReport:
     posted: int = 0
     pending: int = 0
     skipped_untrusted: int = 0
+    failed: int = 0
 
 
 def _select_candidates(items, cfg: SourcesConfig, channel: Channel, store: SeenStore, now: datetime, report: RunReport):
@@ -117,6 +118,8 @@ def run_channel(
                 report.posted += 1
                 if analysis is None:
                     report.pending += 1
+            else:
+                report.failed += 1
         return report
     finally:
         if not dry_run:
@@ -130,11 +133,11 @@ def run_digest(
     now: datetime,
     post: Callable = post_embed,
     dry_run: bool = False,
-) -> bool:
+) -> str:
     embed = build_digest(store.recent_posted(now, hours=24), now)
     if embed is None:
-        return False
+        return "empty"
     if dry_run:
         print(json.dumps(embed, indent=2))
-        return True
-    return post(webhook_url, embed)
+        return "posted"
+    return "posted" if post(webhook_url, embed) else "failed"

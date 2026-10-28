@@ -91,6 +91,16 @@ def test_parse_rejects_unknown_tag():
         parse_analysis(payload(tag="breaking"))
 
 
+def test_parse_accepts_capitalized_tag():
+    assert parse_analysis(payload(tag="Threat")).tag == "threat"
+    assert parse_analysis(payload(tag=" FYI ")).tag == "fyi"
+
+
+def test_parse_rejects_null_field():
+    with pytest.raises(AnalysisError):
+        parse_analysis(payload(summary=None))
+
+
 def test_parse_rejects_missing_field():
     data = json.loads(payload())
     del data["angle"]

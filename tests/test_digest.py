@@ -47,6 +47,32 @@ def test_digest_field_has_link_blurb_and_respects_limits():
     assert "https://example.com/1" in field["value"]
 
 
+def long_record(n):
+    rec = record(n, 9)
+    rec["title"] = "t" * 400
+    rec["url"] = "https://news.google.com/rss/articles/" + "x" * 330
+    rec["summary"] = "s" * 600
+    rec["angle"] = "a" * 400
+    return rec
+
+
+def test_digest_cuts_the_blurb_not_the_link():
+    rec = long_record(1)
+
+    field = build_digest([rec], NOW)["fields"][0]
+
+    assert field["value"].endswith(f"[Source]({rec['url']})")
+    assert len(field["value"]) <= 1000
+
+
+def test_digest_total_size_stays_under_discord_limit():
+    embed = build_digest([long_record(n) for n in range(5)], NOW)
+
+    total = len(embed["title"]) + len(embed["description"])
+    total += sum(len(f["name"]) + len(f["value"]) for f in embed["fields"])
+    assert total <= 6000
+
+
 def test_digest_title_has_date():
     embed = build_digest([record(1, 9)], NOW)
 

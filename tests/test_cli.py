@@ -1,4 +1,5 @@
 from radar.__main__ import main
+from radar.run import RunReport
 
 
 def write_config(tmp_path):
@@ -31,6 +32,22 @@ def test_run_requires_webhook_unless_dry_run(tmp_path, monkeypatch):
     code = main(["run", "--channel", str(channel), "--state", str(tmp_path / "s.json")])
 
     assert code == 2
+
+
+def test_run_exits_nonzero_when_posts_failed(tmp_path, monkeypatch):
+    monkeypatch.setenv("DIGEST_TEST_HOOK", "https://hook.example/w")
+    monkeypatch.setattr("radar.__main__.run_channel", lambda *a, **k: RunReport(failed=2))
+    channel = write_config(tmp_path)
+
+    assert main(["run", "--channel", str(channel), "--state", str(tmp_path / "s.json")]) == 1
+
+
+def test_digest_exits_nonzero_when_post_failed(tmp_path, monkeypatch):
+    monkeypatch.setenv("DIGEST_TEST_HOOK", "https://hook.example/w")
+    monkeypatch.setattr("radar.__main__.run_digest", lambda *a, **k: "failed")
+    channel = write_config(tmp_path)
+
+    assert main(["digest", "--channel", str(channel), "--state", str(tmp_path / "s.json")]) == 1
 
 
 def test_digest_dry_run_with_empty_state_exits_zero(tmp_path, monkeypatch, capsys):

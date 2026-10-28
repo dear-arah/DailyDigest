@@ -33,6 +33,13 @@ class AnalysisError(ValueError):
     pass
 
 
+def _text(data: dict, key: str) -> str:
+    value = data[key]
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{key} must be non-empty text")
+    return value.strip()
+
+
 def build_messages(item: Item, context: str) -> tuple[str, str]:
     system = _SYSTEM.format(tags=", ".join(TAGS), context=context)
     published = item.published.isoformat() if item.published else "unknown"
@@ -56,11 +63,12 @@ def parse_analysis(raw: str) -> Analysis:
         raise AnalysisError(f"invalid JSON: {exc}") from exc
 
     try:
-        summary, tag, product, angle = (str(data[k]).strip() for k in ("summary", "tag", "product", "angle"))
+        summary, tag, product, angle = (_text(data, k) for k in ("summary", "tag", "product", "angle"))
         score = int(data["score"])
     except (KeyError, TypeError, ValueError) as exc:
         raise AnalysisError(f"missing or invalid field: {exc}") from exc
 
+    tag = tag.lower()
     if tag not in TAGS:
         raise AnalysisError(f"unknown tag: {tag!r}")
 

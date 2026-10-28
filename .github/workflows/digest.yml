@@ -8,9 +8,6 @@ on:
 permissions:
   contents: read
 
-env:
-  STATE_REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
-
 jobs:
   digest:
     runs-on: ubuntu-latest
@@ -28,12 +25,9 @@ jobs:
         run: pip install .
 
       - name: Load state
-        run: |
-          if git ls-remote --exit-code --heads "$STATE_REMOTE" state >/dev/null 2>&1; then
-            git clone --quiet --depth 1 --branch state "$STATE_REMOTE" state-repo
-          else
-            mkdir state-repo
-          fi
+        env:
+          STATE_REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: sh scripts/load-state.sh "$STATE_REMOTE" state-repo
 
       - name: Post digest
         env:
