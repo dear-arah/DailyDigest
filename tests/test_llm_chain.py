@@ -25,9 +25,10 @@ class FakeProvider:
 
 
 class FakeResponse:
-    def __init__(self, payload=None, status=200):
+    def __init__(self, payload=None, status=200, headers=None):
         self._payload = payload
         self.status_code = status
+        self.headers = headers or {}
 
     def json(self):
         return self._payload
@@ -138,10 +139,13 @@ def test_gemini_parses_candidate_text():
 
 
 def test_http_429_becomes_provider_error():
-    provider = OpenAICompatProvider("groq", "https://api.example/v1", "m", "k", post=RecordingPost(FakeResponse({}, status=429)))
+    post = RecordingPost(FakeResponse({}, status=429))
+    provider = OpenAICompatProvider("groq", "https://api.example/v1", "m", "k", post=post, sleep=lambda s: None)
 
     with pytest.raises(ProviderError):
         provider.complete("s", "u")
+
+    assert len(post.calls) == 2
 
 
 def test_malformed_body_becomes_provider_error():
@@ -159,3 +163,79 @@ def test_network_exception_becomes_provider_error():
 
     with pytest.raises(ProviderError):
         provider.complete("s", "u")
+
+
+class SequencePost:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = 0
+
+    def __call__(self, url, **kwargs):
+        self.calls += 1
+        return self.responses.pop(0)
+
+
+OK = {"choices": [{"message": {"content": "hello"}}]}
+
+
+def make_provider(post, sleeps):
+    return OpenAICompatProvider("groq", "https://api.example/v1", "m", "k", post=post, sleep=sleeps.append)
+
+
+@pytest.mark.parametrize("status", [429, 503])
+def test_transient_status_is_retried_once(status):
+    post = SequencePost([FakeResponse({}, status=status), FakeResponse(OK)])
+    sleeps = []
+
+    assert make_provider(post, sleeps).complete("s", "u") == "hello"
+
+    assert post.calls == 2
+    assert len(sleeps) == 1
+
+
+def test_retry_after_header_sets_the_wait():
+    post = SequencePost([FakeResponse({}, status=429, headers={"Retry-After": "7"}), FakeResponse(OK)])
+    sleeps = []
+
+    make_provider(post, sleeps).complete("s", "u")
+
+    assert sleeps == [7.0]
+
+
+def test_retry_wait_is_capped():
+    post = SequencePost([FakeResponse({}, status=429, headers={"Retry-After": "3600"}), FakeResponse(OK)])
+    sleeps = []
+
+    make_provider(post, sleeps).complete("s", "u")
+
+    assert sleeps[0] <= 20
+
+
+def test_gives_up_after_one_retry():
+    post = SequencePost([FakeResponse({}, status=503), FakeResponse({}, status=503), FakeResponse(OK)])
+    sleeps = []
+
+    with pytest.raises(ProviderError):
+        make_provider(post, sleeps).complete("s", "u")
+
+    assert post.calls == 2
+
+
+@pytest.mark.parametrize("status", [400, 401, 403, 404, 500])
+def test_other_errors_are_not_retried(status):
+    post = SequencePost([FakeResponse({}, status=status), FakeResponse(OK)])
+    sleeps = []
+
+    with pytest.raises(ProviderError):
+        make_provider(post, sleeps).complete("s", "u")
+
+    assert post.calls == 1 and sleeps == []
+
+
+def test_gemini_retries_transient_status_too():
+    payload = {"candidates": [{"content": {"parts": [{"text": "answer"}]}}]}
+    post = SequencePost([FakeResponse({}, status=503), FakeResponse(payload)])
+    sleeps = []
+
+    assert GeminiProvider("m", "k", post=post, sleep=sleeps.append).complete("s", "u") == "answer"
+    assert len(sleeps) == 1

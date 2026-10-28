@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Callable
@@ -22,6 +23,8 @@ log = logging.getLogger(__name__)
 
 ANALYSIS_FACTOR = 3
 MAX_UNANALYZED_PER_RUN = 2
+# Seconds between model calls, to stay under free-tier per-minute limits.
+ANALYSIS_PAUSE = 3.0
 
 
 @dataclass
@@ -71,6 +74,7 @@ def run_channel(
     collect: Callable = collect_all,
     post: Callable = post_embed,
     resolve: Callable[[str], str] = resolve_url,
+    sleep: Callable[[float], None] = time.sleep,
     webhook_url: str | None,
     dry_run: bool = False,
 ) -> RunReport:
@@ -88,7 +92,9 @@ def run_channel(
             return report
 
         to_post = []
-        for item, tier in _select_candidates(items, cfg, channel, store, now, report):
+        for index, (item, tier) in enumerate(_select_candidates(items, cfg, channel, store, now, report)):
+            if index:
+                sleep(ANALYSIS_PAUSE)
             try:
                 analysis = analyze(item, chain, context)
             except Exception:

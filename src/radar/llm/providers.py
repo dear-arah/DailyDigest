@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Callable, Protocol
 
 import requests
@@ -19,9 +20,26 @@ class Provider(Protocol):
     def complete(self, system: str, user: str) -> str: ...
 
 
-def _send(post: Callable, url: str, **kwargs) -> dict:
+_RETRY_STATUSES = (429, 503)
+_DEFAULT_WAIT = 5.0
+_MAX_WAIT = 15.0
+
+
+def _retry_wait(response) -> float:
+    try:
+        wait = float(response.headers.get("Retry-After", _DEFAULT_WAIT))
+    except (AttributeError, TypeError, ValueError):
+        wait = _DEFAULT_WAIT
+    return max(0.0, min(wait, _MAX_WAIT))
+
+
+def _send(post: Callable, url: str, sleep: Callable[[float], None] = time.sleep, **kwargs) -> dict:
+    """POST once, and once more after a short wait when the provider is rate limited or overloaded."""
     try:
         response = post(url, **kwargs)
+        if response.status_code in _RETRY_STATUSES:
+            sleep(_retry_wait(response))
+            response = post(url, **kwargs)
         if response.status_code >= 400:
             raise ProviderError(f"HTTP {response.status_code} from {url}")
         return response.json()
@@ -40,7 +58,9 @@ class OpenAICompatProvider:
         api_key: str,
         post: Callable = requests.post,
         timeout: float = 60,
+        sleep: Callable[[float], None] = time.sleep,
     ):
+        self._sleep = sleep
         self.name = name
         self._base_url = base_url.rstrip("/")
         self._model = model
@@ -52,6 +72,7 @@ class OpenAICompatProvider:
         data = _send(
             self._post,
             f"{self._base_url}/chat/completions",
+            sleep=self._sleep,
             headers={"Authorization": f"Bearer {self._api_key}"},
             json={
                 "model": self._model,
@@ -73,7 +94,15 @@ class GeminiProvider:
     name = "gemini"
     _BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
-    def __init__(self, model: str, api_key: str, post: Callable = requests.post, timeout: float = 60):
+    def __init__(
+        self,
+        model: str,
+        api_key: str,
+        post: Callable = requests.post,
+        timeout: float = 60,
+        sleep: Callable[[float], None] = time.sleep,
+    ):
+        self._sleep = sleep
         self._model = model
         self._api_key = api_key
         self._post = post
@@ -83,6 +112,7 @@ class GeminiProvider:
         data = _send(
             self._post,
             f"{self._BASE}/{self._model}:generateContent",
+            sleep=self._sleep,
             headers={"x-goog-api-key": self._api_key},
             json={
                 "systemInstruction": {"parts": [{"text": system}]},

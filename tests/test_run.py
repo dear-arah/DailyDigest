@@ -7,7 +7,7 @@ from radar.dedupe import SeenStore
 from radar.llm.chain import FallbackChain
 from radar.llm.providers import ProviderError
 from radar.models import Channel, Item, ProviderSpec, Source
-from radar.run import run_channel, run_digest
+from radar.run import ANALYSIS_PAUSE, run_channel, run_digest
 
 NOW = datetime(2026, 10, 28, 12, 0, tzinfo=timezone.utc)
 CFG = SourcesConfig(
@@ -83,7 +83,7 @@ def seeded_store(tmp_path):
     return store
 
 
-def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, dry_run=False, resolve=lambda url: url):
+def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, dry_run=False, resolve=lambda url: url, sleep=lambda seconds: None):
     store = store or seeded_store(tmp_path)
     provider = provider or ScoreProvider()
     post = post or PostRecorder()
@@ -97,6 +97,7 @@ def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, 
         collect=lambda sources: items,
         post=post,
         resolve=resolve,
+        sleep=sleep,
         webhook_url=HOOK,
         dry_run=dry_run,
     )
@@ -251,6 +252,15 @@ def test_posts_capped_and_highest_score_first(tmp_path):
 
     assert [e["title"] for e in post.embeds] == ["Top", "Mid"]
     assert report.posted == 2
+
+
+def test_analysis_calls_are_paced(tmp_path):
+    sleeps = []
+    items = [make_item(f"Story {n}") for n in range(3)]
+
+    run(tmp_path, items, sleep=sleeps.append)
+
+    assert sleeps == [ANALYSIS_PAUSE, ANALYSIS_PAUSE]
 
 
 def test_analysis_cap_limits_llm_calls(tmp_path):
