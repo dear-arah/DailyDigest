@@ -25,11 +25,12 @@ class FallbackChain:
     def __init__(self, providers: Sequence[Provider]):
         self.providers = list(providers)
 
-    def complete(self, system: str, user: str) -> str:
+    def complete(self, system: str, user: str, parse: Callable | None = None):
         for provider in self.providers:
             try:
-                return provider.complete(system, user)
-            except ProviderError as exc:
+                raw = provider.complete(system, user)
+                return parse(raw) if parse else raw
+            except (ProviderError, ValueError) as exc:
                 log.warning("provider %s failed: %s", provider.name, exc)
         raise AllProvidersFailed("no provider produced a response")
 

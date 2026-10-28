@@ -59,6 +59,21 @@ def test_chain_stops_at_first_success():
     assert second.calls == 0
 
 
+def test_chain_tries_next_provider_when_parse_fails():
+    first = FakeProvider("a", result="junk")
+    second = FakeProvider("b", result="7")
+
+    assert FallbackChain([first, second]).complete("s", "u", parse=int) == 7
+    assert first.calls == 1 and second.calls == 1
+
+
+def test_chain_raises_when_every_output_fails_parse():
+    chain = FallbackChain([FakeProvider("a", result="junk"), FakeProvider("b", result="more junk")])
+
+    with pytest.raises(AllProvidersFailed):
+        chain.complete("s", "u", parse=int)
+
+
 def test_chain_raises_when_all_fail():
     chain = FallbackChain([FakeProvider("a", error=ProviderError("x")), FakeProvider("b", error=ProviderError("y"))])
 
