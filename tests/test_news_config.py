@@ -40,7 +40,7 @@ def test_core_voice_terms_are_keywords(keywords, word):
     "title, text",
     [
         ("Anthropic tells California governor courts should be able to block risky AI models", "Policy and courts."),
-        ("Expanding our partnership with GSA to bring Claude to all levels of government", "Government rollout."),
+        ("Expanding our partnership with GSA to bring its models to all levels of government", "Government rollout."),
         ("Can we trust LLMs to judge whether a research idea is novel?", "A benchmark of research ideas."),
         ("Genie 4: a new generation of world simulation", "Video game worlds."),
     ],
