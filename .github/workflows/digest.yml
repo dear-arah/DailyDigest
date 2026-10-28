@@ -1,0 +1,41 @@
+name: digest
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STATE_REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: pip install .
+
+      - name: Load state
+        run: |
+          if git ls-remote --exit-code --heads "$STATE_REMOTE" state >/dev/null 2>&1; then
+            git clone --quiet --depth 1 --branch state "$STATE_REMOTE" state-repo
+          else
+            mkdir state-repo
+          fi
+
+      - name: Post digest
+        env:
+          DISCORD_WEBHOOK_NEWS: ${{ secrets.DISCORD_WEBHOOK_NEWS }}
+        run: python -m radar digest --channel config/channels/news.yaml --state state-repo/news.json

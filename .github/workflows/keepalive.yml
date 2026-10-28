@@ -1,0 +1,19 @@
+name: keepalive
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  enable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Re-enable the radar schedule if it was paused
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/${{ github.repository }}/actions/workflows/radar.yml/enable"

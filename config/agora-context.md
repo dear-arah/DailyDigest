@@ -20,7 +20,7 @@ Agora (agora.io) is a real-time engagement platform for voice, video, messaging 
 
 ## Developers and community
 - Client SDKs for Android, iOS, macOS, Windows, Web, Electron, Flutter, React Native, Unity and Unreal. Server SDKs for Python, TypeScript and Go.
-- Developer tooling: Agora CLI, an MCP server, and a skills pack that teaches AI coding assistants (Cursor, Copilot, Windsurf and others) how to build on Agora.
+- Developer tooling: Agora CLI, an MCP server, and a skills pack that teaches AI coding assistants how to build on Agora.
 - Community: GitHub organization AgoraIO-Community, blog, events (hackathons, conferences, webinars) and social channels.
 - Target use cases: AI tutors and companions, customer-service voice bots replacing IVR, telehealth, live shopping, education, gaming, media and entertainment, voice toys and wearables.
 
