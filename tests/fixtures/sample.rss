@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Sample</title>
+    <item>
+      <title>Voice agent launch</title>
+      <link>https://example.com/a?utm_source=x</link>
+      <description>&lt;p&gt;Big &lt;b&gt;news&lt;/b&gt; about agents.&lt;/p&gt;</description>
+      <pubDate>Tue, 27 Oct 2026 10:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>No link here</title>
+      <description>skip me</description>
+    </item>
+    <item>
+      <title>Press story</title>
+      <link>https://news.google.com/rss/articles/abc</link>
+      <description>text</description>
+      <pubDate>Tue, 27 Oct 2026 11:00:00 GMT</pubDate>
+      <source url="https://techcrunch.com">TechCrunch</source>
+    </item>
+  </channel>
+</rss>
