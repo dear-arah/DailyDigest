@@ -18,6 +18,7 @@ USER_AGENT = "daily-digest/0.1 (+https://github.com/dear-arah/DailyDigest)"
 
 _TAG = re.compile(r"<[^>]+>")
 _SPACE = re.compile(r"\s+")
+_BARE_VERSION = re.compile(r"^v?\d+(\.\d+)+\S*$")
 
 
 class FeedError(Exception):
@@ -56,9 +57,12 @@ def fetch_feed(source: Source, get: Callable = requests.get, timeout: float = 15
         link = entry.get("link")
         if not link:
             continue
+        title = _clean(entry.get("title", ""))
+        if _BARE_VERSION.match(title):
+            title = f"{source.name} {title}"
         items.append(
             Item(
-                title=_clean(entry.get("title", "")),
+                title=title,
                 url=link,
                 text=_clean(_body(entry)),
                 published=_published(entry),

@@ -32,10 +32,14 @@ def resolve_tier(item: Item, cfg: SourcesConfig) -> int | None:
     if not item.discovery:
         return item.tier
     domain = _domain(item.publisher_url or item.url)
-    for trusted, tier in cfg.trusted_domains.items():
-        if domain == trusted or domain.endswith(f".{trusted}"):
-            return tier
-    return None
+    matches = [
+        (trusted, tier)
+        for trusted, tier in cfg.trusted_domains.items()
+        if domain == trusted or domain.endswith(f".{trusted}")
+    ]
+    if not matches:
+        return None
+    return max(matches, key=lambda m: len(m[0]))[1]
 
 
 def badge(tier: int) -> str:

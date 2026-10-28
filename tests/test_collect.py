@@ -54,9 +54,15 @@ def test_fetch_feed_parses_atom_items():
 
     items = fetch_feed(ATOM, get=fake_get({ATOM.url: response}))
 
-    assert [i.title for i in items] == ["v1.2.0"]
+    assert [i.title for i in items] == ["Releases v1.2.0"]
     assert items[0].url == "https://github.com/example/repo/releases/tag/v1.2.0"
     assert items[0].published == datetime(2026, 10, 27, 9, 0, tzinfo=timezone.utc)
+
+
+def test_fetch_feed_keeps_descriptive_titles_unprefixed():
+    items = fetch_feed(RSS, get=fake_get({RSS.url: rss_response()}))
+
+    assert items[0].title == "Voice agent launch"
 
 
 def test_fetch_feed_skips_entries_without_link():
@@ -94,7 +100,7 @@ def test_collect_all_survives_one_failing_feed():
 
     items = collect_all([RSS, ATOM], get=get)
 
-    assert [i.title for i in items] == ["v1.2.0"]
+    assert [i.title for i in items] == ["Releases v1.2.0"]
 
 
 def test_collect_all_survives_malformed_xml():
@@ -102,4 +108,4 @@ def test_collect_all_survives_malformed_xml():
 
     items = collect_all([RSS, ATOM], get=get)
 
-    assert [i.title for i in items] == ["v1.2.0"]
+    assert [i.title for i in items] == ["Releases v1.2.0"]

@@ -76,6 +76,13 @@ def test_resolve_tier_discovery_prefers_publisher_url():
     assert resolve_tier(item, CFG) == 3
 
 
+def test_resolve_tier_prefers_most_specific_domain():
+    cfg = SourcesConfig(sources=(), trusted_domains={"vendor.example": 1, "community.vendor.example": 3})
+    item = make_item(discovery=True, url="https://community.vendor.example/thread/1")
+
+    assert resolve_tier(item, cfg) == 3
+
+
 def test_resolve_tier_discovery_unknown_domain_is_none():
     item = make_item(discovery=True, url="https://random-blog.example/post")
 
