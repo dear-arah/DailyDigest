@@ -46,6 +46,13 @@ threshold: 6
 max_posts_per_run: 8
 max_age_hours: 48
 
+# Items whose title or link matches any of these patterns (case-insensitive) are dropped before analysis.
+# They catch evergreen marketing pages ("X alternative", "A vs B") that are not news.
+exclude:
+  - '\balternatives?\b'
+  - '/(vs|compare|alternatives?)/'
+  - '-vs-'
+
 # Tried in this order. A provider without its key in the environment is skipped.
 providers:
   - {name: gemini, model: gemini-3.5-flash}

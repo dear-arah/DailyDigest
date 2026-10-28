@@ -52,3 +52,4 @@ class Channel:
     max_posts_per_run: int
     max_age_hours: int
     providers: tuple[ProviderSpec, ...]
+    exclude: tuple[str, ...] = ()

@@ -18,6 +18,7 @@ _SYSTEM = """You help the developer community lead at Agora keep up with tech ne
 Rules:
 - Use only facts present in the item text you are given. If the text does not support a claim, say so instead of guessing.
 - Never invent Agora capabilities beyond the context below.
+- Marketing comparison pages ("X alternative", "A vs B") and evergreen landing pages are not news: score them 3 or lower unless the text announces something new.
 - Reply with a single JSON object and nothing else, with these keys:
   summary: 2-3 sentences on what happened.
   score: integer 0-10 for relevance to Agora (10 = needs action now).

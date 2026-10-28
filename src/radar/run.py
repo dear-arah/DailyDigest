@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Callable
 
@@ -15,6 +16,7 @@ from radar.filters import is_fresh, matches_topics, resolve_tier
 from radar.llm.chain import FallbackChain
 from radar.models import Channel
 from radar.post import build_embed, post_embed
+from radar.resolve import resolve_url
 
 log = logging.getLogger(__name__)
 
@@ -36,10 +38,13 @@ def _select_candidates(items, cfg: SourcesConfig, channel: Channel, store: SeenS
     new = [item for item in items if not store.seen(item)]
     report.new = len(new)
 
+    excluded = [re.compile(p, re.IGNORECASE) for p in channel.exclude]
     candidates = []
     in_batch: set[str] = set()
     for item in new:
         if not is_fresh(item, now, channel.max_age_hours) or not matches_topics(item, channel.keywords):
+            continue
+        if any(p.search(f"{item.title} {item.url}") for p in excluded):
             continue
         tier = resolve_tier(item, cfg)
         if tier is None:
@@ -65,6 +70,7 @@ def run_channel(
     now: datetime,
     collect: Callable = collect_all,
     post: Callable = post_embed,
+    resolve: Callable[[str], str] = resolve_url,
     webhook_url: str | None,
     dry_run: bool = False,
 ) -> RunReport:
@@ -107,13 +113,14 @@ def run_channel(
             selected.append(entry)
 
         for item, analysis, tier in selected:
-            embed = build_embed(item, analysis, tier)
+            shown = replace(item, url=resolve(item.url))
+            embed = build_embed(shown, analysis, tier)
             if dry_run:
                 print(json.dumps(embed, indent=2))
                 delivered = True
             else:
                 delivered = post(webhook_url, embed)
-                store.record(item, analysis, posted=delivered, now=now, retry=not delivered)
+                store.record(item, analysis, posted=delivered, now=now, retry=not delivered, url=shown.url)
             if delivered:
                 report.posted += 1
                 if analysis is None:

@@ -95,3 +95,37 @@ providers:
 
     with pytest.raises(ConfigError):
         load_channel(path)
+
+
+CHANNEL_YAML = """
+name: news
+webhook_env: DISCORD_WEBHOOK_URL
+sources_file: s
+context_file: c
+keywords: [voice ai]
+threshold: 6
+max_posts_per_run: 8
+max_age_hours: 48
+{extra}
+providers:
+  - {{name: gemini, model: m}}
+"""
+
+
+def test_load_channel_reads_exclude_patterns(tmp_path):
+    path = write(tmp_path, "news.yaml", CHANNEL_YAML.format(extra="exclude: ['\\balternatives?\\b', '/vs/']"))
+
+    assert load_channel(path).exclude == (r"\balternatives?\b", "/vs/")
+
+
+def test_load_channel_exclude_defaults_to_empty(tmp_path):
+    path = write(tmp_path, "news.yaml", CHANNEL_YAML.format(extra=""))
+
+    assert load_channel(path).exclude == ()
+
+
+def test_load_channel_rejects_invalid_exclude_pattern(tmp_path):
+    path = write(tmp_path, "news.yaml", CHANNEL_YAML.format(extra="exclude: ['(unclosed']"))
+
+    with pytest.raises(ConfigError):
+        load_channel(path)

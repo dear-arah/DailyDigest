@@ -83,7 +83,7 @@ def seeded_store(tmp_path):
     return store
 
 
-def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, dry_run=False):
+def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, dry_run=False, resolve=lambda url: url):
     store = store or seeded_store(tmp_path)
     provider = provider or ScoreProvider()
     post = post or PostRecorder()
@@ -96,6 +96,7 @@ def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, 
         now=NOW,
         collect=lambda sources: items,
         post=post,
+        resolve=resolve,
         webhook_url=HOOK,
         dry_run=dry_run,
     )
@@ -154,6 +155,44 @@ def test_trusted_discovery_item_is_posted(tmp_path):
     _, _, _, post = run(tmp_path, items)
 
     assert [e["title"] for e in post.embeds] == ["Vendor news"]
+
+
+def test_excluded_patterns_are_dropped_without_llm_call(tmp_path):
+    channel = make_channel(exclude=(r"\balternatives?\b", "/vs/"))
+    items = [
+        make_item("Acme TTS alternative for voice agents | Acme"),
+        make_item("Acme versus Beta", url="https://acme.example/vs/beta"),
+        make_item("Acme ships new voice ai model"),
+    ]
+
+    _, _, provider, post = run(tmp_path, items, channel=channel)
+
+    assert [e["title"] for e in post.embeds] == ["Acme ships new voice ai model"]
+    assert len(provider.calls) == 1
+
+
+def test_posted_link_is_resolved_but_dedupe_uses_the_original(tmp_path):
+    original = "https://redirect.example/abc"
+    items = [make_item("Fresh news", url=original)]
+    store = seeded_store(tmp_path)
+
+    _, store, _, post = run(tmp_path, items, store=store, resolve=lambda url: "https://publisher.example/story")
+    again, _, _, post_again = run(tmp_path, items, store=store)
+
+    assert post.embeds[0]["url"] == "https://publisher.example/story"
+    posted = {r["title"]: r["url"] for r in store.recent_posted(NOW, hours=24)}
+    assert posted["Fresh news"] == "https://publisher.example/story"
+    assert store.seen(items[0])
+    assert post_again.embeds == []
+
+
+def test_resolver_is_not_called_for_items_that_are_not_posted(tmp_path):
+    calls = []
+    items = [make_item("Minor thing")]
+
+    run(tmp_path, items, provider=ScoreProvider(default=3), resolve=lambda url: calls.append(url) or url)
+
+    assert calls == []
 
 
 def test_stale_and_off_topic_items_are_skipped(tmp_path):

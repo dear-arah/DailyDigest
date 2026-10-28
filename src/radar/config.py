@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -68,6 +69,12 @@ def load_channel(path: Path) -> Channel:
     )
     if not providers:
         raise ConfigError(f"{where}: providers must not be empty")
+    exclude = tuple(data.get("exclude") or ())
+    for pattern in exclude:
+        try:
+            re.compile(pattern)
+        except re.error as exc:
+            raise ConfigError(f"{where}: invalid exclude pattern {pattern!r}: {exc}") from exc
     return Channel(
         name=_require(data, "name", where),
         webhook_env=_require(data, "webhook_env", where),
@@ -78,4 +85,5 @@ def load_channel(path: Path) -> Channel:
         max_posts_per_run=int(_require(data, "max_posts_per_run", where)),
         max_age_hours=int(_require(data, "max_age_hours", where)),
         providers=providers,
+        exclude=exclude,
     )

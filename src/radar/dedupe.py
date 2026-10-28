@@ -60,11 +60,12 @@ class SeenStore:
         posted: bool,
         now: datetime,
         retry: bool = False,
+        url: str | None = None,
     ) -> None:
         key = normalize_url(item.url)
         self._records[key] = {
             "title": item.title,
-            "url": item.url,
+            "url": url or item.url,
             "source": item.source,
             "tier": item.tier,
             "ts": now.isoformat(),

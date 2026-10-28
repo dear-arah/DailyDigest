@@ -141,3 +141,9 @@ def test_analyze_returns_none_when_chain_fails():
     chain = FallbackChain([FakeProvider("a", error=ProviderError("down"))])
 
     assert analyze(make_item(), chain, CONTEXT) is None
+
+
+def test_system_prompt_tells_the_model_comparison_pages_are_not_news():
+    system, _ = build_messages(make_item(), "ctx")
+
+    assert "not news" in system
