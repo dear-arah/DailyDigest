@@ -28,6 +28,22 @@ If no model is reachable, up to two official items per run are posted marked "An
 
 Providers are tried in the order listed in `config/channels/news.yaml`. A provider without its key is skipped.
 
+## Reliable timer (recommended)
+
+GitHub's own schedule is best-effort. For public repositories it can start runs late or skip them. A free outside timer that starts the `radar` workflow on the dot fixes that. GitHub's schedule stays in place as a backup, and overlapping runs are safe: they queue, and already-posted items are never posted twice.
+
+1. Create a token. On GitHub open Settings, Developer settings, Personal access tokens, Fine-grained tokens, Generate new token. Set repository access to only this repository, and under Repository permissions set Actions to Read and write. Choose an expiry (the maximum is one year; note the date and renew it). Copy the token.
+2. Create a free account at [cron-job.org](https://cron-job.org) and choose Create cronjob:
+   - URL: `https://api.github.com/repos/<owner>/<repo>/actions/workflows/radar.yml/dispatches`
+   - Schedule: every 30 minutes.
+   - Advanced, request method: `POST`.
+   - Advanced, headers: `Authorization` = `Bearer <your token>`, `Accept` = `application/vnd.github+json`, `Content-Type` = `application/json`.
+   - Advanced, request body: `{"ref":"main"}`
+   - Turn on notifications for failed runs.
+3. Use the Test run button. A status of 200 or 204 means it worked, and a new `radar` run with the event "workflow_dispatch" appears in the Actions tab.
+
+The token lives only in that timer service, never in this repository. If it expires, the timer starts failing and you get an email: make a new token and paste it into the job. Do not set up a second timer for `digest`, because its own schedule already runs it and two triggers would post it twice.
+
 ## Customize
 
 - Add or remove sources in `config/sources.yaml`. To follow a person, add their Bluesky, Mastodon or Medium feed as a tier 2 source.
@@ -35,6 +51,7 @@ Providers are tried in the order listed in `config/channels/news.yaml`. A provid
 - Add patterns to `exclude` in `config/channels/news.yaml` to drop evergreen marketing pages (titles or links such as "X alternative" or "/vs/") before they reach the model.
 - Edit `config/agora-context.md` when Agora's products change. It steers every note.
 - Change `threshold`, `max_posts_per_run` and the keywords in `config/channels/news.yaml`.
+- The keyword list decides what the model sees at all, and the score rubric in `src/radar/analyze.py` decides what gets posted (`threshold` is 7). Both are tuned for voice and conversational AI. Bare company names and generic terms such as `llm` are left out of the keywords on purpose.
 - The digest runs at 00:17 UTC. Change the cron line in `.github/workflows/digest.yml`. The schedules use odd minutes (:07, :37, :17) on purpose: GitHub delays or drops scheduled runs at :00 and :30 when it is busy.
 
 ## Run locally

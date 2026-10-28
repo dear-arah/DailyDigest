@@ -4,27 +4,45 @@ sources_file: config/sources.yaml
 context_file: config/agora-context.md
 
 # An item is analyzed only if its title or text contains one of these words (plural forms match too).
+# Keep this list about voice and conversational AI. Bare company names (openai, anthropic, gemini) and
+# generic terms (llm, multimodal) are left out on purpose: they let general AI news through.
 keywords:
+  # voice and conversational AI
   - voice ai
   - voice agent
+  - voice assistant
+  - voice mode
+  - voice cloning
+  - voice model
   - conversational ai
+  - conversational agent
+  - advanced voice
+  - gemini live
+  - live api
   - ai agent
-  - agentic
+  - mcp
+  # speech and real-time models
   - realtime
   - real-time
   - speech
+  - speech-to-text
   - text-to-speech
   - tts
   - asr
+  - stt
   - transcription
+  - turn detection
+  - barge-in
+  # real-time communication and telephony
   - webrtc
   - rtc
   - telephony
   - sip
+  - ivr
+  - contact center
+  - call center
   - avatar
-  - multimodal
-  - mcp
-  - llm
+  # companies and frameworks in the space
   - livekit
   - pipecat
   - vapi
@@ -36,13 +54,11 @@ keywords:
   - twilio
   - vonage
   - agora
-  - openai
-  - anthropic
-  - gemini
+  # developer community
   - hackathon
   - devrel
 
-threshold: 6
+threshold: 7
 max_posts_per_run: 8
 max_age_hours: 48
 
@@ -52,6 +68,8 @@ exclude:
   - '\balternatives?\b'
   - '/(vs|compare|alternatives?)/'
   - '-vs-'
+  - '^\s*[-–—]\s'
+  - '/projects/new'
 
 # Tried in this order. A provider without its key in the environment is skipped.
 providers:

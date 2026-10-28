@@ -147,3 +147,11 @@ def test_system_prompt_tells_the_model_comparison_pages_are_not_news():
     system, _ = build_messages(make_item(), "ctx")
 
     assert "not news" in system
+
+
+def test_system_prompt_scores_strictly_by_voice_relevance():
+    system, _ = build_messages(make_item(), "ctx")
+
+    assert "voice or conversational AI" in system
+    assert "policy, legal" in system
+    assert "Never speculate" in system
