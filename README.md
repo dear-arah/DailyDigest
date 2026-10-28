@@ -35,7 +35,7 @@ Providers are tried in the order listed in `config/channels/news.yaml`. A provid
 - Add patterns to `exclude` in `config/channels/news.yaml` to drop evergreen marketing pages (titles or links such as "X alternative" or "/vs/") before they reach the model.
 - Edit `config/agora-context.md` when Agora's products change. It steers every note.
 - Change `threshold`, `max_posts_per_run` and the keywords in `config/channels/news.yaml`.
-- The digest runs at 00:00 UTC. Change the cron line in `.github/workflows/digest.yml`.
+- The digest runs at 00:17 UTC. Change the cron line in `.github/workflows/digest.yml`. The schedules use odd minutes (:07, :37, :17) on purpose: GitHub delays or drops scheduled runs at :00 and :30 when it is busy.
 
 ## Run locally
 
