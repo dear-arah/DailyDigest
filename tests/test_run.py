@@ -187,6 +187,23 @@ def test_posted_link_is_resolved_but_dedupe_uses_the_original(tmp_path):
     assert post_again.embeds == []
 
 
+def test_excluded_pattern_is_checked_against_the_resolved_link(tmp_path):
+    channel = make_channel(exclude=("/(product|solutions)/",))
+    items = [
+        make_item("Voice agents page", url="https://redirect.example/a"),
+        make_item("Real release notes", url="https://redirect.example/b"),
+    ]
+    resolved = {
+        "https://redirect.example/a": "https://vendor.example/product/voice-agents",
+        "https://redirect.example/b": "https://vendor.example/blog/release-notes",
+    }
+
+    _, store, _, post = run(tmp_path, items, channel=channel, resolve=resolved.get)
+
+    assert [e["title"] for e in post.embeds] == ["Real release notes"]
+    assert store.seen(items[0])
+
+
 def test_resolver_is_not_called_for_items_that_are_not_posted(tmp_path):
     calls = []
     items = [make_item("Minor thing")]

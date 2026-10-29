@@ -37,17 +37,26 @@ class RunReport:
     failed: int = 0
 
 
+def _compile_exclusions(channel: Channel) -> list[re.Pattern]:
+    return [re.compile(p, re.IGNORECASE) for p in channel.exclude]
+
+
+def _is_excluded(item, patterns: list[re.Pattern]) -> bool:
+    text = f"{item.title} {item.url}"
+    return any(p.search(text) for p in patterns)
+
+
 def _select_candidates(items, cfg: SourcesConfig, channel: Channel, store: SeenStore, now: datetime, report: RunReport):
     new = [item for item in items if not store.seen(item)]
     report.new = len(new)
 
-    excluded = [re.compile(p, re.IGNORECASE) for p in channel.exclude]
+    excluded = _compile_exclusions(channel)
     candidates = []
     in_batch: set[str] = set()
     for item in new:
         if not is_fresh(item, now, channel.max_age_hours) or not matches_topics(item, channel.keywords):
             continue
-        if any(p.search(f"{item.title} {item.url}") for p in excluded):
+        if _is_excluded(item, excluded):
             continue
         tier = resolve_tier(item, cfg)
         if tier is None:
@@ -118,8 +127,14 @@ def run_channel(
                 unanalyzed += 1
             selected.append(entry)
 
+        excluded = _compile_exclusions(channel)
         for item, analysis, tier in selected:
             shown = replace(item, url=resolve(item.url))
+            if _is_excluded(shown, excluded):
+                # Only visible after resolving a search-result link (for example a product page).
+                if not dry_run:
+                    store.record(item, analysis, posted=False, now=now, url=shown.url)
+                continue
             embed = build_embed(shown, analysis, tier)
             if dry_run:
                 print(json.dumps(embed, indent=2))

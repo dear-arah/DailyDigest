@@ -70,6 +70,10 @@ def test_voice_and_conversational_ai_news_passes(keywords, title, text):
         ("- LiveKit Cloud", "https://cloud.livekit.io/projects/new"),
         ("Acme TTS alternative for voice agents", "https://acme.example/blog"),
         ("Acme versus Beta", "https://acme.example/vs/beta"),
+        ("One Voice Agent API", "https://deepgram.com/product/voice-agents"),
+        ("Medical speech-to-text", "https://deepgram.com/solutions/medical"),
+        ("The most accurate speech to text API", "https://acme.example/stt"),
+        ("The speech to text API ranked #1 for streaming accuracy", "https://acme.example/speech-to-text-api"),
     ],
 )
 def test_evergreen_and_junk_pages_are_excluded(title, url):
@@ -84,6 +88,11 @@ def test_real_news_is_not_excluded():
     import re
 
     patterns = [re.compile(p, re.IGNORECASE) for p in load_channel(CHANNEL).exclude]
-    text = "Deepgram ships Flux update https://deepgram.com/learn/flux-update"
+    texts = [
+        "Deepgram ships Flux update https://deepgram.com/learn/flux-update",
+        "Pipecat v1.15.0 https://github.com/pipecat-ai/pipecat/releases/tag/v1.15.0",
+        "Introducing the realtime API https://openai.com/index/introducing-realtime-api",
+        "Acme voice model ranked #1 on the TTS arena https://acme.example/blog/tts-arena",
+    ]
 
-    assert not any(p.search(text) for p in patterns)
+    assert not any(p.search(text) for text in texts for p in patterns)
