@@ -58,6 +58,8 @@ def test_general_ai_news_is_filtered_out_before_analysis(keywords, title, text):
         ("Twilio launches a voice agent builder", "Phone calls."),
         ("New voice cloning model from ElevenLabs", "Clones a voice."),
         ("LiveKit adds turn detection", "Barge-in handling."),
+        ("townbox/ava (Space)", "Talk face to face with LFM3-Omni, running in your browser"),
+        ("Qwen releases an Omni model", "Speech in, speech out."),
     ],
 )
 def test_voice_and_conversational_ai_news_passes(keywords, title, text):
@@ -139,10 +141,58 @@ def test_sources_file_follows_trending_huggingface_voice_models():
     sources = load_sources(CHANNEL.parent.parent / "sources.yaml").sources
     hf = [s for s in sources if s.kind == "huggingface"]
 
-    assert len(hf) >= 3
+    models = [s for s in hf if s.url.startswith("https://huggingface.co/api/models?")]
+    spaces = [s for s in hf if s.url.startswith("https://huggingface.co/api/spaces?")]
+
+    assert len(models) >= 3 and len(spaces) == 1
+    assert len(models) + len(spaces) == len(hf)
     assert all(s.min_likes >= 30 and s.max_age_days <= 14 for s in hf)
     assert all(s.tier == 4 and not s.discovery for s in hf)
-    assert all(s.url.startswith("https://huggingface.co/api/models?") and "sort=trendingScore" in s.url for s in hf)
-    tasks = " ".join(s.url for s in hf)
+    assert all("sort=trendingScore" in s.url for s in hf)
+    assert "full=true" in spaces[0].url
+    tasks = " ".join(s.url for s in models)
     for tag in ("text-to-speech", "automatic-speech-recognition", "audio-to-audio"):
         assert f"pipeline_tag={tag}" in tasks
+
+
+def test_a_community_page_found_through_discovery_is_not_badged_official():
+    from radar.config import load_sources
+    from radar.filters import resolve_tier
+
+    cfg = load_sources(CHANNEL.parent.parent / "sources.yaml")
+    shared = Item(
+        title="Show HN: a small TTS model",
+        url="https://huggingface.co/someone/small-tts",
+        text="",
+        published=None,
+        source="Hacker News",
+        tier=3,
+        discovery=True,
+    )
+
+    assert resolve_tier(shared, cfg) == 4
+
+
+def test_the_ava_space_passes_the_topic_filter_end_to_end(keywords):
+    from radar.huggingface import fetch_models
+    from radar.models import Source
+
+    now = datetime(2026, 11, 3, tzinfo=timezone.utc)
+    source = Source("HF: Spaces", "https://huggingface.co/api/spaces?sort=trendingScore&full=true", 4, kind="huggingface", min_likes=30)
+    listing = [
+        {"id": "townbox/ava", "createdAt": "2026-10-30T12:09:18.000Z", "likes": 31,
+         "cardData": {"title": "Ava", "short_description": "Talk face to face with LFM3-Omni, running in your browser"}},
+        {"id": "briaai/Fibo-2.0-editing", "createdAt": "2026-10-30T12:09:18.000Z", "likes": 207,
+         "cardData": {"title": "FIBO 2.0 Edit Turbo", "short_description": "Fibo 2.0 Edit Turbo image editing in 4 steps"}},
+    ]
+
+    class Response:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return listing
+
+    items = fetch_models(source, get=lambda url, **kw: Response(), now=now)
+
+    assert [matches_topics(i, keywords) for i in items] == [True, False]

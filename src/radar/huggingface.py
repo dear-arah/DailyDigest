@@ -47,13 +47,37 @@ def _describe(entry: dict) -> str:
     return " ".join(parts)
 
 
+def _clean_card_text(value) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = _SPACE.sub(" ", value).strip().rstrip(".")
+    return text or None
+
+
+def _describe_space(entry: dict) -> str:
+    space_id = entry["id"]
+    owner = space_id.split("/", 1)[0]
+    card = entry.get("cardData") or {}
+    parts = [f"Space {space_id}, published on Hugging Face by {owner}. Hugging Face only hosts it."]
+    if title := _clean_card_text(card.get("title")):
+        parts.append(f"Title: {title}.")
+    if description := _clean_card_text(card.get("short_description")):
+        parts.append(f"Description: {description}.")
+    parts.append(f"{entry.get('likes', 0)} likes.")
+    return " ".join(parts)
+
+
+def _is_space_listing(source: Source) -> bool:
+    return urlsplit(source.url).path.rstrip("/") == "/api/spaces"
+
+
 def fetch_models(
     source: Source,
     get: Callable = requests.get,
     now: datetime | None = None,
     timeout: float = 15,
 ) -> list[Item]:
-    """Read a Hugging Face model listing (for example the trending text-to-speech models).
+    """Read a Hugging Face model or Space listing (for example the trending text-to-speech models).
 
     The listing carries no publication date, so an item is dated when it is first seen.
     Models older than the source's max_age_days or with fewer likes than min_likes are dropped.
@@ -62,13 +86,17 @@ def fetch_models(
     response = get(source.url, timeout=timeout, headers={"User-Agent": USER_AGENT})
     response.raise_for_status()
     cutoff = now - timedelta(days=source.max_age_days)
+    spaces = _is_space_listing(source)
 
     items = []
     for entry in response.json():
         try:
             created = _created(entry)
-            title = f"{entry['id']} ({entry.get('pipeline_tag') or 'model'} model)"
-            text = _describe(entry)
+            if spaces:
+                title, path, text = f"{entry['id']} (Space)", f"spaces/{entry['id']}", _describe_space(entry)
+            else:
+                title = f"{entry['id']} ({entry.get('pipeline_tag') or 'model'} model)"
+                path, text = entry["id"], _describe(entry)
         except (KeyError, ValueError, TypeError, AttributeError):
             continue
         if entry.get("likes", 0) < source.min_likes or created < cutoff:
@@ -76,7 +104,7 @@ def fetch_models(
         items.append(
             Item(
                 title=title,
-                url=f"https://huggingface.co/{entry['id']}",
+                url=f"https://huggingface.co/{path}",
                 text=text,
                 published=now,
                 source=source.name,

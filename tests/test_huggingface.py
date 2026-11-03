@@ -165,3 +165,68 @@ def test_text_names_the_uploader_and_says_the_hub_only_hosts_the_model():
 
     assert "uploaded to the Hugging Face Hub by FermionResearch" in item.text
     assert "only hosts it" in item.text
+
+
+SPACES = Source(
+    "HF: trending Spaces",
+    "https://huggingface.co/api/spaces?sort=trendingScore&limit=100&full=true",
+    4,
+    kind="huggingface",
+    min_likes=30,
+    max_age_days=14,
+)
+
+
+def space(space_id, *, days_old=4, likes=31, card=None):
+    created = NOW - timedelta(days=days_old)
+    entry = {
+        "id": space_id,
+        "createdAt": created.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+        "likes": likes,
+        "sdk": "static",
+        "tags": ["static", "region:us"],
+    }
+    if card is not None:
+        entry["cardData"] = card
+    return entry
+
+
+AVA_CARD = {"title": "Ava", "short_description": "Talk face to face with LFM3-Omni, running in your browser"}
+
+
+def test_fetch_spaces_builds_an_item_from_the_space_card():
+    item = fetch_models(SPACES, get=get_for([space("townbox/ava", card=AVA_CARD)]), now=NOW)[0]
+
+    assert item.title == "townbox/ava (Space)"
+    assert item.url == "https://huggingface.co/spaces/townbox/ava"
+    assert item.tier == 4 and item.discovery is False and item.published == NOW
+    assert "published on Hugging Face by townbox" in item.text
+    assert "only hosts it" in item.text
+    assert "Title: Ava." in item.text
+    assert "Description: Talk face to face with LFM3-Omni, running in your browser." in item.text
+    assert "31 likes" in item.text
+    assert "region:us" not in item.text
+
+
+def test_fetch_spaces_applies_the_like_and_age_limits():
+    payload = [
+        space("a/popular", likes=90, card=AVA_CARD),
+        space("b/unliked", likes=2, card=AVA_CARD),
+        space("c/old", days_old=40, likes=500, card=AVA_CARD),
+    ]
+
+    items = fetch_models(SPACES, get=get_for(payload), now=NOW)
+
+    assert [i.url for i in items] == ["https://huggingface.co/spaces/a/popular"]
+
+
+def test_fetch_spaces_copes_with_a_missing_or_odd_card():
+    payload = [space("a/bare"), space("b/odd", card={"title": None, "short_description": 7})]
+
+    items = fetch_models(SPACES, get=get_for(payload), now=NOW)
+
+    assert [i.url for i in items] == [
+        "https://huggingface.co/spaces/a/bare",
+        "https://huggingface.co/spaces/b/odd",
+    ]
+    assert "Description" not in items[0].text and "Title" not in items[0].text

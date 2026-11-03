@@ -49,6 +49,7 @@ sources:
   # dropped by the `exclude` patterns in the channel file.
   - {name: "Hugging Face: text-to-speech", url: "https://huggingface.co/api/models?pipeline_tag=text-to-speech&sort=trendingScore&limit=40", tier: 4, kind: huggingface, min_likes: 30, max_age_days: 14}
   - {name: "Hugging Face: speech recognition", url: "https://huggingface.co/api/models?pipeline_tag=automatic-speech-recognition&sort=trendingScore&limit=40", tier: 4, kind: huggingface, min_likes: 30, max_age_days: 14}
+  - {name: "Hugging Face: trending Spaces", url: "https://huggingface.co/api/spaces?sort=trendingScore&limit=100&full=true", tier: 4, kind: huggingface, min_likes: 30, max_age_days: 14}
   - {name: "Hugging Face: audio-to-audio", url: "https://huggingface.co/api/models?pipeline_tag=audio-to-audio&sort=trendingScore&limit=40", tier: 4, kind: huggingface, min_likes: 30, max_age_days: 14}
 
   # --- Discovery: news search (publisher domain decides the tier) ---
@@ -82,7 +83,8 @@ trusted_domains:
   news.microsoft.com: 1
   blogs.microsoft.com: 1
   nvidia.com: 1
-  huggingface.co: 1
+  # community uploads (models, Spaces) are not official, so a link found elsewhere is a community item
+  huggingface.co: 4
   github.blog: 1
   mistral.ai: 1
   ai.meta.com: 1
