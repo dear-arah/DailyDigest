@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 from radar.config import SourcesConfig
 from radar.models import Item
 
-_BADGES = {1: "Official", 2: "Known voice", 3: "Press"}
+_BADGES = {1: "Official", 2: "Known voice", 3: "Press", 4: "Community"}
 
 
 def is_fresh(item: Item, now: datetime, max_age_hours: int) -> bool:

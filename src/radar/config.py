@@ -10,6 +10,9 @@ import yaml
 from radar.models import Channel, ProviderSpec, Source
 
 
+SOURCE_KINDS = ("feed", "huggingface")
+
+
 class ConfigError(ValueError):
     pass
 
@@ -34,22 +37,32 @@ def _require(data: dict[str, Any], key: str, where: str) -> Any:
 
 
 def _tier(value: Any, where: str) -> int:
-    if value not in (1, 2, 3):
-        raise ConfigError(f"{where}: tier must be 1, 2 or 3, got {value!r}")
+    if value not in (1, 2, 3, 4):
+        raise ConfigError(f"{where}: tier must be 1, 2, 3 or 4, got {value!r}")
     return value
+
+
+def _kind(value: Any, where: str) -> str:
+    if value not in SOURCE_KINDS:
+        raise ConfigError(f"{where}: kind must be one of {', '.join(SOURCE_KINDS)}, got {value!r}")
+    return value
+
+
+def _source(entry: dict[str, Any], where: str) -> Source:
+    return Source(
+        name=_require(entry, "name", where),
+        url=_require(entry, "url", where),
+        tier=_tier(_require(entry, "tier", where), where),
+        discovery=bool(entry.get("discovery", False)),
+        kind=_kind(entry.get("kind", "feed"), where),
+        min_likes=int(entry.get("min_likes", 0)),
+        max_age_days=int(entry.get("max_age_days", 21)),
+    )
 
 
 def load_sources(path: Path) -> SourcesConfig:
     data = _read_yaml(path)
-    sources = tuple(
-        Source(
-            name=_require(entry, "name", str(path)),
-            url=_require(entry, "url", str(path)),
-            tier=_tier(_require(entry, "tier", str(path)), str(path)),
-            discovery=bool(entry.get("discovery", False)),
-        )
-        for entry in _require(data, "sources", str(path))
-    )
+    sources = tuple(_source(entry, str(path)) for entry in _require(data, "sources", str(path)))
     trusted = {
         str(domain): _tier(tier, f"{path}: trusted_domains[{domain}]")
         for domain, tier in (data.get("trusted_domains") or {}).items()

@@ -74,6 +74,9 @@ def test_voice_and_conversational_ai_news_passes(keywords, title, text):
         ("Medical speech-to-text", "https://deepgram.com/solutions/medical"),
         ("The most accurate speech to text API", "https://acme.example/stt"),
         ("The speech to text API ranked #1 for streaming accuracy", "https://acme.example/speech-to-text-api"),
+        ("AtomicChat/Transcribe-30B-GGUF (automatic-speech-recognition model)", "https://huggingface.co/AtomicChat/Transcribe-30B-GGUF"),
+        ("nvidia/Transcribe-30B-NVFP4 (automatic-speech-recognition model)", "https://huggingface.co/nvidia/Transcribe-30B-NVFP4"),
+        ("acme/voice-small-mlx (text-to-speech model)", "https://huggingface.co/acme/voice-small-mlx"),
     ],
 )
 def test_evergreen_and_junk_pages_are_excluded(title, url):
@@ -93,6 +96,53 @@ def test_real_news_is_not_excluded():
         "Pipecat v1.15.0 https://github.com/pipecat-ai/pipecat/releases/tag/v1.15.0",
         "Introducing the realtime API https://openai.com/index/introducing-realtime-api",
         "Acme voice model ranked #1 on the TTS arena https://acme.example/blog/tts-arena",
+        "empero-ai/PiVo-1.4M (text-to-speech model) https://huggingface.co/empero-ai/PiVo-1.4M",
+        "nvidia/NVIDIA-NemotronLabs-RE-USE (audio-to-audio model) https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE",
     ]
 
     assert not any(p.search(text) for text in texts for p in patterns)
+
+
+def test_huggingface_voice_models_pass_the_topic_filter(keywords):
+    from datetime import datetime, timezone
+
+    from radar.filters import matches_topics
+    from radar.huggingface import fetch_models
+    from radar.models import Source
+
+    now = datetime(2026, 11, 3, tzinfo=timezone.utc)
+    source = Source("HF", "https://huggingface.co/api/models", 4, kind="huggingface")
+    listing = [
+        {"id": "empero-ai/PiVo-1.4M", "createdAt": "2026-11-01T21:54:14.000Z", "likes": 36,
+         "pipeline_tag": "text-to-speech", "tags": ["onnx", "text-to-speech"]},
+        {"id": "nvidia/NVIDIA-NemotronLabs-RE-USE", "createdAt": "2026-10-30T12:52:19.000Z", "likes": 133,
+         "pipeline_tag": "audio-to-audio", "tags": ["speech-enhancement"]},
+        {"id": "acme/image-gen", "createdAt": "2026-11-01T00:00:00.000Z", "likes": 90,
+         "pipeline_tag": "text-to-image", "tags": ["diffusers"]},
+    ]
+
+    class Response:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return listing
+
+    items = fetch_models(source, get=lambda url, **kw: Response(), now=now)
+
+    assert [matches_topics(i, keywords) for i in items] == [True, True, False]
+
+
+def test_sources_file_follows_trending_huggingface_voice_models():
+    from radar.config import load_sources
+
+    sources = load_sources(CHANNEL.parent.parent / "sources.yaml").sources
+    hf = [s for s in sources if s.kind == "huggingface"]
+
+    assert len(hf) >= 3
+    assert all(s.min_likes >= 30 and s.max_age_days <= 14 for s in hf)
+    assert all(s.tier == 4 and not s.discovery for s in hf)
+    assert all(s.url.startswith("https://huggingface.co/api/models?") and "sort=trendingScore" in s.url for s in hf)
+    tasks = " ".join(s.url for s in hf)
+    for tag in ("text-to-speech", "automatic-speech-recognition", "audio-to-audio"):
+        assert f"pipeline_tag={tag}" in tasks

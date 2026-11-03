@@ -35,11 +35,37 @@ trusted_domains:
     assert cfg.trusted_domains == {"vendor.example": 1, "press.example": 3}
 
 
-def test_load_sources_rejects_tier_4(tmp_path):
+def test_load_sources_rejects_tier_5(tmp_path):
     path = write(
         tmp_path,
         "sources.yaml",
-        "sources:\n  - {name: Bad, url: 'https://x.example/f', tier: 4}\n",
+        "sources:\n  - {name: Bad, url: 'https://x.example/f', tier: 5}\n",
+    )
+
+    with pytest.raises(ConfigError):
+        load_sources(path)
+
+
+def test_load_sources_reads_huggingface_options(tmp_path):
+    path = write(
+        tmp_path,
+        "sources.yaml",
+        "sources:\n"
+        "  - {name: HF, url: 'https://huggingface.co/api/models', tier: 4, kind: huggingface, min_likes: 12, max_age_days: 14}\n"
+        "  - {name: Plain, url: 'https://x.example/f', tier: 1}\n",
+    )
+
+    hf, plain = load_sources(path).sources
+
+    assert (hf.kind, hf.min_likes, hf.max_age_days, hf.tier) == ("huggingface", 12, 14, 4)
+    assert (plain.kind, plain.min_likes, plain.max_age_days) == ("feed", 0, 21)
+
+
+def test_load_sources_rejects_unknown_kind(tmp_path):
+    path = write(
+        tmp_path,
+        "sources.yaml",
+        "sources:\n  - {name: Bad, url: 'https://x.example/f', tier: 1, kind: carrier-pigeon}\n",
     )
 
     with pytest.raises(ConfigError):

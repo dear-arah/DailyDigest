@@ -14,6 +14,7 @@ from radar.config import SourcesConfig
 from radar.dedupe import SeenStore, normalize_url, title_key
 from radar.digest import build_digest
 from radar.filters import is_fresh, matches_topics, resolve_tier
+from radar.huggingface import enrich as enrich_item
 from radar.llm.chain import FallbackChain
 from radar.models import Channel
 from radar.post import build_embed, post_embed
@@ -84,6 +85,7 @@ def run_channel(
     post: Callable = post_embed,
     resolve: Callable[[str], str] = resolve_url,
     sleep: Callable[[float], None] = time.sleep,
+    enrich: Callable = enrich_item,
     webhook_url: str | None,
     dry_run: bool = False,
 ) -> RunReport:
@@ -104,6 +106,7 @@ def run_channel(
         for index, (item, tier) in enumerate(_select_candidates(items, cfg, channel, store, now, report)):
             if index:
                 sleep(ANALYSIS_PAUSE)
+            item = enrich(item)
             try:
                 analysis = analyze(item, chain, context)
             except Exception:

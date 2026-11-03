@@ -73,6 +73,8 @@ exclude:
   - '/(product|products|solutions?|pricing)/'
   - '\bthe most accurate\b'
   - '\bthe [a-z ]{0,40}api ranked #?1\b'
+  # quantized or converted re-uploads of a model are not news
+  - 'huggingface\.co/\S*[-_.](gguf|nvfp4|awq|gptq|mlx|fp8|int4|int8|bnb|exl2)\b'
 
 # Tried in this order. A provider without its key in the environment is skipped.
 providers:

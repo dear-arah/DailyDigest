@@ -83,7 +83,7 @@ def seeded_store(tmp_path):
     return store
 
 
-def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, dry_run=False, resolve=lambda url: url, sleep=lambda seconds: None):
+def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, dry_run=False, resolve=lambda url: url, sleep=lambda seconds: None, enrich=lambda item: item):
     store = store or seeded_store(tmp_path)
     provider = provider or ScoreProvider()
     post = post or PostRecorder()
@@ -98,6 +98,7 @@ def run(tmp_path, items, *, store=None, provider=None, post=None, channel=None, 
         post=post,
         resolve=resolve,
         sleep=sleep,
+        enrich=enrich,
         webhook_url=HOOK,
         dry_run=dry_run,
     )
@@ -211,6 +212,23 @@ def test_resolver_is_not_called_for_items_that_are_not_posted(tmp_path):
     run(tmp_path, items, provider=ScoreProvider(default=3), resolve=lambda url: calls.append(url) or url)
 
     assert calls == []
+
+
+def test_candidates_are_enriched_before_analysis_but_seen_items_are_not(tmp_path):
+    from dataclasses import replace
+
+    enriched = []
+
+    def enrich(item):
+        enriched.append(item.title)
+        return replace(item, text=item.text + " MODEL-CARD-DETAIL")
+
+    items = [make_item("Already known"), make_item("Fresh news")]
+
+    _, _, provider, _ = run(tmp_path, items, enrich=enrich)
+
+    assert enriched == ["Fresh news"]
+    assert "MODEL-CARD-DETAIL" in provider.calls[0]
 
 
 def test_stale_and_off_topic_items_are_skipped(tmp_path):

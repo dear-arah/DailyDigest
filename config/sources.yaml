@@ -44,6 +44,13 @@ sources:
   - {name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index", tier: 3}
   - {name: "MIT Technology Review AI", url: "https://www.technologyreview.com/topic/artificial-intelligence/feed", tier: 3}
 
+  # --- Tier 4: community. Trending voice and speech models on Hugging Face (free API, no key).
+  # Listings carry no date, so an item counts as new when it first appears. Quantized re-uploads are
+  # dropped by the `exclude` patterns in the channel file.
+  - {name: "Hugging Face: text-to-speech", url: "https://huggingface.co/api/models?pipeline_tag=text-to-speech&sort=trendingScore&limit=40", tier: 4, kind: huggingface, min_likes: 30, max_age_days: 14}
+  - {name: "Hugging Face: speech recognition", url: "https://huggingface.co/api/models?pipeline_tag=automatic-speech-recognition&sort=trendingScore&limit=40", tier: 4, kind: huggingface, min_likes: 30, max_age_days: 14}
+  - {name: "Hugging Face: audio-to-audio", url: "https://huggingface.co/api/models?pipeline_tag=audio-to-audio&sort=trendingScore&limit=40", tier: 4, kind: huggingface, min_likes: 30, max_age_days: 14}
+
   # --- Discovery: news search (publisher domain decides the tier) ---
   - {name: "News: voice AI", url: "https://news.google.com/rss/search?q=%22voice+ai%22+OR+%22voice+agent%22+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 3, discovery: true}
   - {name: "News: voice platforms", url: "https://news.google.com/rss/search?q=LiveKit+OR+Vapi+OR+Retell+OR+Pipecat+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 3, discovery: true}

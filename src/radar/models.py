@@ -12,6 +12,9 @@ class Source:
     url: str
     tier: int
     discovery: bool = False
+    kind: str = "feed"
+    min_likes: int = 0
+    max_age_days: int = 21
 
 
 @dataclass(frozen=True)

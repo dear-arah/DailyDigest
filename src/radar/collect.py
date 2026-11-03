@@ -9,6 +9,7 @@ from typing import Callable, Iterable
 import feedparser
 import requests
 
+from radar.huggingface import fetch_models
 from radar.models import Item, Source
 
 log = logging.getLogger(__name__)
@@ -78,11 +79,20 @@ def fetch_feed(source: Source, get: Callable = requests.get, timeout: float = 15
     return items
 
 
+def fetch_source(source: Source, get: Callable = requests.get) -> list[Item]:
+    if source.kind == "huggingface":
+        try:
+            return fetch_models(source, get=get)
+        except Exception as exc:
+            raise FeedError(f"{source.name}: {exc}") from exc
+    return fetch_feed(source, get=get)
+
+
 def collect_all(sources: Iterable[Source], get: Callable = requests.get) -> list[Item]:
     items: list[Item] = []
     for source in sources:
         try:
-            items.extend(fetch_feed(source, get=get))
+            items.extend(fetch_source(source, get=get))
         except FeedError as exc:
             log.warning("skipping feed: %s", exc)
     return items

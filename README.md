@@ -1,12 +1,12 @@
 # Daily Digest
 
-Tech and AI news for a Discord channel, checked every 30 minutes. Each post has a headline, a short summary, a link to the source, a trust badge (Official, Known voice or Press), and a note on what the item means for Agora.
+Tech and AI news for a Discord channel, checked every 30 minutes. Each post has a headline, a short summary, a link to the source, a trust badge (Official, Known voice, Press or Community), and a note on what the item means for Agora.
 
 It runs entirely on free tiers: GitHub Actions, a Discord webhook, and a free-tier language model.
 
 ## How it works
 
-1. Reads the feeds listed in `config/sources.yaml`: official blogs and release feeds, known people, press, and news-search feeds.
+1. Reads the feeds listed in `config/sources.yaml`: official blogs and release feeds, known people, press, and news-search feeds. It also reads the trending voice and speech models on Hugging Face (free API, no key); those get the Community badge, because anyone can upload a model.
 2. Drops anything already posted, too old, or off-topic (keywords in `config/channels/news.yaml`).
 3. Items found through a news search or Hacker News are posted only when the publisher is in `trusted_domains`. Everything else is dropped.
 4. A language model writes the summary and the Agora note, using `config/agora-context.md` as background. Items below the relevance threshold are not posted.
@@ -48,6 +48,7 @@ The token lives only in that timer service, never in this repository. If it expi
 
 - Add or remove sources in `config/sources.yaml`. To follow a person, add their Bluesky, Mastodon or Medium feed as a tier 2 source.
 - Add publishers you trust to `trusted_domains`.
+- Hugging Face model listings use `kind: huggingface` with `min_likes` and `max_age_days` (models older than that are ignored). Point the `url` at any `https://huggingface.co/api/models?...` listing, for example another `pipeline_tag`. Trending items are dated when they first appear, and the model card is read only for items that pass the filters. Spaces are not covered, because their metadata rarely says what they do.
 - Add patterns to `exclude` in `config/channels/news.yaml` to drop evergreen marketing pages (titles or links such as "X alternative" or "/vs/") before they reach the model.
 - Edit `config/agora-context.md` when Agora's products change. It steers every note.
 - Change `threshold`, `max_posts_per_run` and the keywords in `config/channels/news.yaml`.

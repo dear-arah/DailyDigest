@@ -99,3 +99,4 @@ def test_badge_labels():
     assert badge(1) == "Official"
     assert badge(2) == "Known voice"
     assert badge(3) == "Press"
+    assert badge(4) == "Community"
